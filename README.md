@@ -1,3 +1,4 @@
+<img width="1430" height="764" alt="image" src="https://github.com/user-attachments/assets/a7b0a6c8-3e48-41eb-85ec-aecfba0531dd" />
 
 # Qualidade e Teste de Software
 
