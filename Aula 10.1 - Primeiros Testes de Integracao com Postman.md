@@ -7,13 +7,16 @@ Nesta aula prática, utilizaremos o projeto **Menu-Back-End** e a ferramenta **P
 Ao final da atividade, você deverá ser capaz de:
 
 - executar a aplicação `Menu-Back-End`;
-- enviar requisições HTTP utilizando o Postman;
+- compreender os principais elementos do Postman;
+- enviar requisições HTTP;
 - organizar requisições em uma Collection;
 - utilizar variáveis de ambiente;
-- criar verificações automatizadas sobre as respostas;
+- compreender e criar scripts de pré-requisição e pós-resposta;
+- criar verificações automatizadas;
 - executar um fluxo CRUD completo;
-- compreender o que está sendo integrado durante os testes;
-- compreender, de forma prática, a ideia de **integração incremental**.
+- executar uma Collection como uma suíte automatizada;
+- compreender a ideia de integração incremental;
+- relacionar integração incremental e regressão.
 
 ---
 
@@ -49,7 +52,7 @@ A API permite realizar operações CRUD sobre produtos.
 
 ---
 
-# 2. O que estamos testando?
+# 2. O que é teste de integração?
 
 Em um teste unitário, normalmente verificamos uma unidade isolada.
 
@@ -77,17 +80,17 @@ JPA / Repository
 MySQL
 ```
 
-O resultado percorre o caminho inverso até ser convertido novamente em uma resposta HTTP.
+O resultado percorre o caminho inverso até ser transformado em uma resposta HTTP.
 
 Portanto, uma falha pode estar:
 
-- na requisição HTTP;
-- na conversão do JSON;
+- na requisição;
+- no formato do JSON;
 - no Controller;
-- na persistência;
 - no mapeamento JPA;
+- na persistência;
 - na comunicação com o banco;
-- na construção da resposta.
+- na resposta produzida pela aplicação.
 
 > Uma unidade funcionar corretamente de forma isolada não garante que funcionará corretamente quando integrada às demais.
 
@@ -120,7 +123,7 @@ Entre na pasta:
 cd Menu-Back-End
 ```
 
-Configure o arquivo:
+Configure:
 
 ```text
 src/main/resources/application.properties
@@ -159,22 +162,80 @@ http://localhost:8080
 
 ---
 
-# 5. Primeiro teste manual
+# 5. Conhecendo a terminologia do Postman
 
-Abra o Postman e execute:
+Antes de começar, é importante utilizar a nomenclatura correta da ferramenta.
+
+| Termo | Significado |
+|---|---|
+| **Request** | Requisição enviada à API |
+| **Response** | Resposta recebida da API |
+| **Collection** | Agrupamento de requisições relacionadas |
+| **Environment** | Conjunto de variáveis associado a um ambiente |
+| **Variable** | Valor reutilizável, como `baseUrl` ou `produtoId` |
+| **Pre-request script** | Script executado antes do envio da Request |
+| **Post-response script** | Script executado depois que a Response é recebida |
+| **Test** | Verificação definida normalmente com `pm.test()` |
+| **Collection Runner** | Recurso utilizado para executar várias Requests e seus Tests em sequência |
+
+Uma Request pode existir sem possuir Tests.
+
+Exemplo:
+
+```text
+GET /produtos
+```
+
+Isso é uma **Request**.
+
+Já:
+
+```javascript
+pm.test("A resposta deve indicar sucesso", function () {
+    pm.response.to.be.success;
+});
+```
+
+é um **Test** executado em um **Post-response script**.
+
+## Documentação
+
+Postman – Collections:
+
+```text
+https://learning.postman.com/docs/collections/collections-overview/
+```
+
+Postman – Scripts:
+
+```text
+https://learning.postman.com/docs/tests-and-scripts/write-scripts/intro-to-scripts/
+```
+
+---
+
+# 6. Primeiro GET
+
+Abra o Postman e crie uma nova Request:
 
 ```http
 GET http://localhost:8080/produtos
 ```
 
+Execute utilizando:
+
+```text
+Send
+```
+
 Observe:
 
-- código de status;
+- status HTTP;
 - corpo da resposta;
 - formato JSON;
 - tempo de resposta.
 
-Se a aplicação estiver funcionando corretamente, deverá ser retornada a lista de produtos cadastrados.
+Se a aplicação estiver funcionando corretamente, deverá ser retornada a lista de produtos.
 
 ## Reflexão
 
@@ -182,7 +243,7 @@ Se esse teste falhar, a causa obrigatoriamente está no Controller?
 
 **Não.**
 
-A falha pode estar em qualquer ponto da integração:
+A falha pode estar em qualquer ponto:
 
 ```text
 Postman
@@ -194,29 +255,27 @@ JPA
 MySQL
 ```
 
-Esse é um dos motivos pelos quais testes de integração são importantes.
-
 ---
 
-# 6. Criando uma Collection
+# 7. Criando uma Collection
 
 No Postman:
 
 1. acesse **Collections**;
 2. clique em **Create Collection**;
-3. crie a coleção:
+3. crie:
 
 ```text
 Menu Back-End - Testes de Integração
 ```
 
-Dentro dela, crie inicialmente a pasta:
+Dentro dela, crie:
 
 ```text
 01 - Fluxo CRUD
 ```
 
-Ao final da aula, teremos algo semelhante a:
+Ao final da prática teremos:
 
 ```text
 Menu Back-End - Testes de Integração
@@ -232,11 +291,23 @@ Menu Back-End - Testes de Integração
     └── GET - Confirmar exclusão
 ```
 
+Salve a primeira Request como:
+
+```text
+GET - Listar produtos
+```
+
+## Documentação
+
+```text
+https://learning.postman.com/docs/collections/collections-overview/
+```
+
 ---
 
-# 7. Criando um Environment
+# 8. Criando um Environment
 
-Crie um ambiente chamado:
+Crie um Environment:
 
 ```text
 Menu - Local
@@ -244,34 +315,125 @@ Menu - Local
 
 Adicione:
 
-| Variável | Valor |
+| Variable | Value |
 |---|---|
 | `baseUrl` | `http://localhost:8080` |
 
-Selecione esse ambiente no Postman.
+Selecione o Environment no Postman.
 
-A partir de agora, utilize:
-
-```text
-{{baseUrl}}/produtos
-```
-
-em vez de:
+Agora substitua:
 
 ```text
 http://localhost:8080/produtos
 ```
 
-Isso permite alterar o endereço da aplicação em apenas um lugar.
+por:
+
+```text
+{{baseUrl}}/produtos
+```
+
+Quando a Request for executada, o Postman substituirá:
+
+```text
+{{baseUrl}}
+```
+
+por:
+
+```text
+http://localhost:8080
+```
+
+Portanto:
+
+```text
+{{baseUrl}}/produtos
+```
+
+torna-se:
+
+```text
+http://localhost:8080/produtos
+```
+
+## Por que utilizar variáveis?
+
+Imagine dois ambientes:
+
+```text
+LOCAL
+http://localhost:8080
+```
+
+```text
+TESTE
+https://teste.exemplo.com
+```
+
+Não precisamos alterar todas as Requests. Basta modificar ou selecionar outro Environment.
+
+## Documentação
+
+```text
+https://learning.postman.com/docs/sending-requests/variables/managing-environments/
+```
 
 ---
 
-# 8. Primeiro teste automatizado
+# 9. Scripts no Postman
 
-Na requisição:
+O Postman permite executar JavaScript durante o ciclo de uma Request.
 
-```http
-GET {{baseUrl}}/produtos
+Nesta aula utilizaremos dois momentos:
+
+```text
+Pre-request
+    ↓
+REQUEST
+    ↓
+RESPONSE
+    ↓
+Post-response
+```
+
+## Pre-request script
+
+É executado **antes** do envio da Request.
+
+Pode ser usado para:
+
+- criar dados;
+- definir variáveis;
+- preparar valores dinâmicos.
+
+## Post-response script
+
+É executado **depois** que a Response é recebida.
+
+Pode ser usado para:
+
+- verificar resultados;
+- ler o JSON retornado;
+- armazenar dados da resposta;
+- criar Tests.
+
+> Nesta aula utilizaremos scripts no nível da própria Request para facilitar a compreensão.
+
+## Documentação
+
+```text
+https://learning.postman.com/docs/tests-and-scripts/write-scripts/intro-to-scripts/
+```
+
+---
+
+# 10. Criando o primeiro Test
+
+Na Request:
+
+```text
+GET - Listar produtos
 ```
 
 abra:
@@ -288,26 +450,49 @@ pm.test("A resposta deve indicar sucesso", function () {
 });
 ```
 
-Adicione também:
+Vamos entender esse código.
+
+## `pm`
 
 ```javascript
-pm.test("A resposta deve ser JSON", function () {
-    pm.response.to.be.json;
-});
+pm
 ```
 
-E:
+é o objeto disponibilizado pelo Postman para acessar funcionalidades da ferramenta.
+
+## `pm.test()`
 
 ```javascript
-pm.test("O corpo da resposta deve ser uma lista", function () {
-    const body = pm.response.json();
-    pm.expect(body).to.be.an("array");
-});
+pm.test(...)
 ```
 
-Execute novamente a requisição.
+cria um Test.
 
-O Postman deverá mostrar o resultado de cada verificação:
+## Nome do Test
+
+```javascript
+"A resposta deve indicar sucesso"
+```
+
+é o nome que aparecerá no resultado da execução.
+
+## `pm.response`
+
+```javascript
+pm.response
+```
+
+representa a Response recebida.
+
+## Verificação
+
+```javascript
+pm.response.to.be.success;
+```
+
+verifica se a resposta pertence à faixa de sucesso HTTP.
+
+Execute novamente. O resultado será apresentado como:
 
 ```text
 PASS
@@ -319,13 +504,83 @@ ou:
 FAIL
 ```
 
+## Documentação
+
+```text
+https://learning.postman.com/docs/tests-and-scripts/write-scripts/test-scripts/
+```
+
 ---
 
-# 9. Executar não é o mesmo que testar
+# 11. Criando mais verificações
 
-Enviar uma requisição e observar visualmente a resposta é útil, mas um teste deve possuir um **resultado esperado**.
+Adicione:
 
-Podemos representar a ideia assim:
+```javascript
+pm.test("A resposta deve ser JSON", function () {
+    pm.response.to.be.json;
+});
+```
+
+Depois:
+
+```javascript
+pm.test("O corpo da resposta deve ser uma lista", function () {
+    const body = pm.response.json();
+    pm.expect(body).to.be.an("array");
+});
+```
+
+## Entendendo `pm.response.json()`
+
+```javascript
+const body = pm.response.json();
+```
+
+converte o JSON recebido em um objeto JavaScript.
+
+Exemplo de Response:
+
+```json
+[
+  {
+    "id": 1,
+    "nome": "X-Bacon"
+  }
+]
+```
+
+## Entendendo `pm.expect()`
+
+```javascript
+pm.expect(body).to.be.an("array");
+```
+
+significa:
+
+> Esperamos que `body` seja um array.
+
+Assim:
+
+```text
+pm.test()
+```
+
+define o Test, enquanto:
+
+```text
+pm.expect()
+```
+
+define uma expectativa dentro do Test.
+
+---
+
+# 12. Executar não é o mesmo que testar
+
+Enviar uma Request e observar a Response é útil.
+
+Mas um teste precisa possuir um **resultado esperado**.
 
 ```text
 Entrada
@@ -339,28 +594,82 @@ Comparação
 Resultado esperado
 ```
 
-Por exemplo:
+Sem uma expectativa, temos apenas execução.
+
+Quando escrevemos:
 
 ```javascript
-pm.test("O corpo da resposta deve ser uma lista", function () {
-    const body = pm.response.json();
-    pm.expect(body).to.be.an("array");
-});
+pm.expect(body).to.be.an("array");
 ```
 
-Nesse caso, estamos explicitando uma condição que deve ser verdadeira para o teste ser considerado aprovado.
+estamos transformando uma observação em uma verificação automatizada.
 
 ---
 
-# 10. Criando um produto de teste
+# 13. Criando um produto
 
-Crie uma requisição:
+Crie:
 
 ```text
 POST - Criar produto
 ```
 
-Antes da requisição, abra:
+Request:
+
+```http
+POST {{baseUrl}}/produtos
+```
+
+Selecione:
+
+```text
+Body → raw → JSON
+```
+
+Utilize:
+
+```json
+{
+  "nome": "Clássico Bacon",
+  "descricao": "Pão brioche, hambúrguer 180g, queijo cheddar e bacon.",
+  "preco": 29.90,
+  "categoria": "Hambúrguer",
+  "disponibilidade": true,
+  "imagem": "https://exemplo.com/bacon.jpg"
+}
+```
+
+Ao utilizar:
+
+```text
+raw → JSON
+```
+
+o Postman deve enviar o cabeçalho:
+
+```text
+Content-Type: application/json
+```
+
+Sem o corpo JSON, o Spring poderá responder:
+
+```text
+400 Bad Request
+```
+
+com uma mensagem semelhante a:
+
+```text
+Required request body is missing
+```
+
+---
+
+# 14. Criando um nome dinâmico com Pre-request script
+
+Se executarmos o teste várias vezes utilizando sempre o mesmo nome, poderemos criar muitos registros iguais.
+
+Para identificar facilmente os dados criados pelo teste, abra:
 
 ```text
 Scripts → Pre-request
@@ -375,21 +684,48 @@ pm.environment.set(
 );
 ```
 
-Isso cria um nome diferente a cada execução.
+## O que esse script faz?
 
-Configure:
-
-```http
-POST {{baseUrl}}/produtos
+```javascript
+Date.now()
 ```
 
-No Body, selecione:
+gera um valor numérico baseado no instante atual.
+
+Por exemplo:
 
 ```text
-raw → JSON
+1794255827365
 ```
 
-e utilize:
+Então:
+
+```javascript
+"Produto Teste " + Date.now()
+```
+
+pode produzir:
+
+```text
+Produto Teste 1794255827365
+```
+
+Depois:
+
+```javascript
+pm.environment.set(...)
+```
+
+armazena esse valor no Environment ativo.
+
+Teremos:
+
+| Variable | Value |
+|---|---|
+| `baseUrl` | `http://localhost:8080` |
+| `nomeProdutoTeste` | `Produto Teste 1794255827365` |
+
+Agora altere o Body:
 
 ```json
 {
@@ -402,13 +738,17 @@ e utilize:
 }
 ```
 
-Execute a requisição.
-
 ---
 
-# 11. Verificando a criação
+# 15. Verificando a criação
 
-No **Post-response**, adicione:
+Em:
+
+```text
+Scripts → Post-response
+```
+
+adicione:
 
 ```javascript
 pm.test("A criação deve retornar sucesso", function () {
@@ -416,7 +756,7 @@ pm.test("A criação deve retornar sucesso", function () {
 });
 ```
 
-Caso a API devolva o produto criado, podemos verificar o nome:
+Se a Response retornar o produto criado:
 
 ```javascript
 pm.test("O nome retornado deve ser o nome enviado", function () {
@@ -427,7 +767,39 @@ pm.test("O nome retornado deve ser o nome enviado", function () {
 });
 ```
 
-Se a resposta possuir um campo `id`, armazene-o:
+## `pm.environment.get()`
+
+```javascript
+pm.environment.get("nomeProdutoTeste")
+```
+
+recupera o valor previamente armazenado no Environment.
+
+Assim podemos comparar:
+
+```text
+nome enviado
+        ×
+nome retornado
+```
+
+---
+
+# 16. Armazenando o ID do produto
+
+As próximas Requests precisam saber **qual produto foi criado**.
+
+Suponha que a Response seja:
+
+```json
+{
+  "id": 7,
+  "nome": "Produto Teste 1794255827365",
+  "preco": 29.90
+}
+```
+
+No Post-response, adicione:
 
 ```javascript
 const body = pm.response.json();
@@ -437,11 +809,67 @@ if (body.id !== undefined && body.id !== null) {
 }
 ```
 
+## Passo a passo
+
+Primeiro:
+
+```javascript
+const body = pm.response.json();
+```
+
+lê o JSON.
+
+Depois:
+
+```javascript
+body.id
+```
+
+retorna:
+
+```text
+7
+```
+
+Finalmente:
+
+```javascript
+pm.environment.set("produtoId", body.id);
+```
+
+armazena:
+
+| Variable | Value |
+|---|---|
+| `produtoId` | `7` |
+
+A variável fica armazenada no Environment:
+
+```text
+Menu - Local
+```
+
+Agora podemos utilizar:
+
+```text
+{{produtoId}}
+```
+
+em outras Requests.
+
+## Documentação
+
+```text
+https://learning.postman.com/docs/sending-requests/variables/managing-environments/
+```
+
 ---
 
-# 12. Localizando o produto criado
+# 17. E se o POST não retornar o ID?
 
-Se o endpoint `POST` não devolver o identificador, podemos localizá-lo pela listagem.
+Se a implementação não devolver o objeto criado, não devemos inventar o identificador.
+
+Podemos localizá-lo pela listagem.
 
 Crie:
 
@@ -449,13 +877,13 @@ Crie:
 GET - Localizar produto
 ```
 
-Requisição:
+Request:
 
 ```http
 GET {{baseUrl}}/produtos
 ```
 
-No Post-response:
+Post-response:
 
 ```javascript
 const produtos = pm.response.json();
@@ -474,17 +902,25 @@ if (produto) {
 }
 ```
 
-Agora podemos utilizar:
+O fluxo é:
 
 ```text
-{{produtoId}}
+GET /produtos
+      ↓
+recebe lista
+      ↓
+procura nomeProdutoTeste
+      ↓
+encontra Produto
+      ↓
+lê produto.id
+      ↓
+salva produtoId
 ```
-
-nas demais requisições.
 
 ---
 
-# 13. Buscando o produto pelo ID
+# 18. Buscando o produto pelo ID
 
 Crie:
 
@@ -492,10 +928,29 @@ Crie:
 GET - Buscar produto por ID
 ```
 
-Requisição:
+Request:
 
 ```http
 GET {{baseUrl}}/produtos/{{produtoId}}
+```
+
+Imagine:
+
+```text
+baseUrl = http://localhost:8080
+produtoId = 7
+```
+
+Então:
+
+```text
+{{baseUrl}}/produtos/{{produtoId}}
+```
+
+torna-se:
+
+```text
+http://localhost:8080/produtos/7
 ```
 
 Adicione:
@@ -506,7 +961,7 @@ pm.test("A consulta deve retornar sucesso", function () {
 });
 ```
 
-E:
+Depois:
 
 ```javascript
 pm.test("O produto retornado deve possuir o ID esperado", function () {
@@ -517,7 +972,7 @@ pm.test("O produto retornado deve possuir o ID esperado", function () {
 });
 ```
 
-Também podemos verificar o nome:
+E:
 
 ```javascript
 pm.test("O produto deve manter o nome cadastrado", function () {
@@ -530,9 +985,9 @@ pm.test("O produto deve manter o nome cadastrado", function () {
 
 ---
 
-# 14. O que foi integrado até aqui?
+# 19. O que foi integrado até aqui?
 
-Observe o fluxo:
+Até aqui temos:
 
 ```text
 POST
@@ -544,7 +999,7 @@ persistência
 MySQL
 ```
 
-Depois:
+e depois:
 
 ```text
 GET
@@ -556,19 +1011,19 @@ MySQL
 JSON
 ```
 
-O dado criado por uma operação está sendo recuperado por outra.
+Um dado criado por uma operação foi recuperado por outra.
 
-Isso permite verificar a integração entre:
+Isso verifica a integração entre:
 
-- API HTTP;
-- aplicação;
+- HTTP;
+- Controller;
 - persistência;
 - banco de dados;
-- serialização da resposta.
+- conversão para JSON.
 
 ---
 
-# 15. Atualizando o produto
+# 20. Atualizando o produto
 
 Crie:
 
@@ -576,7 +1031,7 @@ Crie:
 PUT - Atualizar produto
 ```
 
-Requisição:
+Request:
 
 ```http
 PUT {{baseUrl}}/produtos/{{produtoId}}
@@ -595,7 +1050,7 @@ Body:
 }
 ```
 
-No Post-response:
+Post-response:
 
 ```javascript
 pm.test("A atualização deve retornar sucesso", function () {
@@ -603,13 +1058,11 @@ pm.test("A atualização deve retornar sucesso", function () {
 });
 ```
 
-Execute a requisição.
-
 ---
 
-# 16. Confirmando a persistência da atualização
+# 21. Confirmando a persistência
 
-Uma resposta de sucesso do `PUT` não demonstra, sozinha, que os dados foram persistidos corretamente.
+Uma resposta de sucesso do `PUT` não garante, sozinha, que o dado foi persistido corretamente.
 
 Crie:
 
@@ -617,7 +1070,7 @@ Crie:
 GET - Confirmar atualização
 ```
 
-Requisição:
+Request:
 
 ```http
 GET {{baseUrl}}/produtos/{{produtoId}}
@@ -633,7 +1086,7 @@ pm.test("O preço atualizado deve ter sido persistido", function () {
 });
 ```
 
-E:
+Depois:
 
 ```javascript
 pm.test("O produto deve estar indisponível", function () {
@@ -643,7 +1096,7 @@ pm.test("O produto deve estar indisponível", function () {
 });
 ```
 
-Agora estamos verificando:
+Temos:
 
 ```text
 PUT
@@ -652,12 +1105,12 @@ persistência
  ↓
 GET
  ↓
-confirmação dos dados
+confirmação
 ```
 
 ---
 
-# 17. Excluindo o produto
+# 22. Excluindo o produto
 
 Crie:
 
@@ -665,13 +1118,13 @@ Crie:
 DELETE - Excluir produto
 ```
 
-Requisição:
+Request:
 
 ```http
 DELETE {{baseUrl}}/produtos/{{produtoId}}
 ```
 
-Adicione:
+Post-response:
 
 ```javascript
 pm.test("A exclusão deve retornar sucesso", function () {
@@ -679,11 +1132,9 @@ pm.test("A exclusão deve retornar sucesso", function () {
 });
 ```
 
-Execute.
-
 ---
 
-# 18. Confirmando a exclusão
+# 23. Confirmando a exclusão
 
 Crie:
 
@@ -691,13 +1142,13 @@ Crie:
 GET - Confirmar exclusão
 ```
 
-Utilize:
+Request:
 
 ```http
 GET {{baseUrl}}/produtos
 ```
 
-No Post-response:
+Post-response:
 
 ```javascript
 const produtos = pm.response.json();
@@ -712,15 +1163,27 @@ pm.test("O produto excluído não deve aparecer na listagem", function () {
 });
 ```
 
-Assim, não verificamos apenas se o `DELETE` retornou sucesso.
+Não estamos verificando apenas se:
 
-Também confirmamos que o registro realmente deixou de existir na persistência.
+```text
+DELETE → sucesso
+```
+
+Também confirmamos:
+
+```text
+DELETE
+ ↓
+GET
+ ↓
+registro não encontrado
+```
 
 ---
 
-# 19. O fluxo completo
+# 24. O fluxo completo
 
-Ao final, temos:
+Ao final:
 
 ```text
 POST
@@ -744,56 +1207,223 @@ GET
 confirmar exclusão
 ```
 
-Esse é o fluxo principal desta prática.
+O objetivo não é apenas testar endpoints isoladamente.
 
-Ele exercita diferentes partes da aplicação trabalhando em conjunto.
+Também queremos verificar se diferentes operações conseguem trabalhar de forma consistente sobre os mesmos dados.
 
 ---
 
-# 20. Integração incremental
+# 25. Executando todos os testes com o Collection Runner
 
-Uma forma importante de realizar testes de integração é integrar e testar o sistema **gradualmente**.
-
-A ideia é evitar integrar tudo de uma vez e somente depois procurar os problemas.
-
-Podemos visualizar:
+Até agora executamos as Requests individualmente utilizando:
 
 ```text
-Novo elemento
-      ↓
-Integrar
-      ↓
-Testar
-      ↓
-Adicionar outro elemento
-      ↓
-Testar novamente
+Send
 ```
 
-No `Menu-Back-End`, utilizaremos essa ideia de forma didática, acrescentando gradualmente operações ao fluxo de teste.
+Mas o objetivo de uma suíte automatizada é poder executar várias Requests e Tests em sequência.
 
-## Incremento 1 – Listagem
+No Postman, utilize o recurso:
 
-Começamos com:
+```text
+Collection Runner
+```
+
+Selecione:
+
+```text
+Menu Back-End - Testes de Integração
+```
+
+ou a pasta:
+
+```text
+01 - Fluxo CRUD
+```
+
+Selecione também:
+
+```text
+Environment: Menu - Local
+```
+
+Confira a ordem:
+
+```text
+GET - Listar produtos
+POST - Criar produto
+GET - Localizar produto
+GET - Buscar produto por ID
+PUT - Atualizar produto
+GET - Confirmar atualização
+DELETE - Excluir produto
+GET - Confirmar exclusão
+```
+
+Execute a Collection.
+
+## Documentação
+
+```text
+https://learning.postman.com/docs/collections/running-collections/intro-to-collection-runs/
+```
+
+---
+
+# 26. O que o Collection Runner executa?
+
+O Runner executa:
+
+```text
+Request 1
+   ↓
+Tests da Request 1
+   ↓
+Request 2
+   ↓
+Tests da Request 2
+   ↓
+Request 3
+   ↓
+Tests da Request 3
+   ↓
+...
+```
+
+Um resultado pode ser semelhante a:
+
+```text
+GET - Listar produtos
+✓ resposta indica sucesso
+✓ resposta é JSON
+✓ corpo é lista
+
+POST - Criar produto
+✓ criação indica sucesso
+✓ nome retornado está correto
+
+GET - Buscar produto por ID
+✓ consulta indica sucesso
+✓ ID está correto
+
+PUT - Atualizar produto
+✓ atualização indica sucesso
+
+GET - Confirmar atualização
+✓ preço atualizado
+✓ disponibilidade atualizada
+
+DELETE - Excluir produto
+✓ exclusão indica sucesso
+
+GET - Confirmar exclusão
+✓ produto não aparece mais
+```
+
+---
+
+# 27. O que significa automatizar?
+
+Sem automação:
+
+```text
+Send GET
+ ↓
+verificar manualmente
+
+Send POST
+ ↓
+verificar manualmente
+
+Send PUT
+ ↓
+verificar manualmente
+```
+
+Com automação:
+
+```text
+Collection Runner
+       ↓
+GET
+       ↓
+Tests
+       ↓
+POST
+       ↓
+Tests
+       ↓
+PUT
+       ↓
+Tests
+       ↓
+DELETE
+       ↓
+Tests
+       ↓
+resultado da execução
+```
+
+Automatizar não significa apenas enviar Requests automaticamente.
+
+Também significa verificar automaticamente se os resultados obtidos correspondem ao esperado.
+
+---
+
+# 28. Integração incremental
+
+Uma estratégia importante é integrar e testar gradualmente.
+
+Em vez de:
+
+```text
+integrar tudo
+     ↓
+testar tudo no final
+```
+
+podemos trabalhar:
+
+```text
+integrar
+   ↓
+testar
+   ↓
+adicionar novo elemento
+   ↓
+testar novamente
+```
+
+Nesta prática utilizaremos essa ideia de forma didática.
+
+---
+
+# 29. Incremento 1 – Listagem
+
+Primeiro temos apenas:
 
 ```text
 GET /produtos
 ```
 
-Verificamos:
-
-- a aplicação está acessível;
-- o banco pode ser consultado;
-- a resposta é JSON;
-- a resposta possui a estrutura esperada.
+Executamos:
 
 ```text
 GET
  ↓
-TESTE
+Tests
 ```
 
-## Incremento 2 – Criação
+Verificamos:
+
+- aplicação acessível;
+- banco acessível;
+- JSON retornado;
+- estrutura básica correta.
+
+---
+
+# 30. Incremento 2 – Criação
 
 Adicionamos:
 
@@ -811,9 +1441,13 @@ GET
 
 Pergunta:
 
-> O produto criado pela operação POST pode ser recuperado posteriormente?
+> O produto criado pode ser recuperado?
 
-## Incremento 3 – Busca por ID
+Também reexecutamos o teste anterior.
+
+---
+
+# 31. Incremento 3 – Busca por ID
 
 Adicionamos:
 
@@ -821,19 +1455,21 @@ Adicionamos:
 GET /produtos/{id}
 ```
 
-Agora:
+Fluxo:
 
 ```text
 POST
  ↓
-obter ID
+produtoId
  ↓
 GET /{id}
 ```
 
-E também mantemos os testes anteriores.
+Mantemos os testes já existentes.
 
-## Incremento 4 – Atualização
+---
+
+# 32. Incremento 4 – Atualização
 
 Adicionamos:
 
@@ -841,7 +1477,7 @@ Adicionamos:
 PUT /produtos/{id}
 ```
 
-Executamos:
+Agora:
 
 ```text
 POST
@@ -853,17 +1489,19 @@ PUT
 GET
 ```
 
-A segunda consulta confirma se a atualização foi realmente persistida.
+A nova consulta confirma a persistência.
 
-## Incremento 5 – Exclusão
+---
 
-Finalmente adicionamos:
+# 33. Incremento 5 – Exclusão
+
+Adicionamos:
 
 ```text
 DELETE /produtos/{id}
 ```
 
-Fluxo:
+Fluxo completo:
 
 ```text
 POST
@@ -879,18 +1517,18 @@ DELETE
 GET
 ```
 
-Agora temos o fluxo completo.
+Depois executamos toda a Collection.
 
 ---
 
-# 21. Por que trabalhar de forma incremental?
+# 34. Por que reexecutar os testes anteriores?
 
 Considere:
 
 ```text
-GET funcionando
-POST funcionando
-GET por ID funcionando
+GET → PASS
+POST → PASS
+GET ID → PASS
 ```
 
 Adicionamos:
@@ -899,151 +1537,162 @@ Adicionamos:
 PUT
 ```
 
-e os testes começam a falhar.
-
-Como o problema apareceu logo após esse incremento, temos uma indicação melhor sobre **onde investigar**.
-
-Esse é um dos benefícios da integração incremental:
-
-> Ao acrescentar componentes ou comportamentos gradualmente e testar a cada etapa, fica mais fácil identificar em qual incremento surgiu um problema.
-
-Também é importante **reexecutar os testes anteriores**.
-
-Exemplo:
-
-```text
-Antes do PUT:
-GET → PASS
-POST → PASS
-GET ID → PASS
-```
-
-Após adicionar o PUT:
+Depois executamos novamente:
 
 ```text
 GET → PASS
 POST → PASS
-GET ID → PASS
+GET ID → FAIL
 PUT → PASS
-GET confirmação → PASS
 ```
 
-Se um teste anterior passar a falhar após uma nova integração, pode ter ocorrido uma **regressão**.
+Mesmo que o teste novo tenha passado, um comportamento anterior deixou de funcionar.
 
-Nesta prática, o objetivo é apenas compreender essa ideia. Teste de regressão será aprofundado em outro momento.
+Isso caracteriza uma possível **regressão**.
 
 ---
 
-# 22. Resumo do cenário testado
+# 35. Introdução ao teste de regressão
 
-Nesta prática construímos progressivamente:
+Teste de regressão consiste em reexecutar testes anteriormente executados para verificar se uma alteração ou nova integração introduziu efeitos indesejados.
+
+Podemos representar:
 
 ```text
-Cadastrar
-   ↓
-Consultar
-   ↓
-Atualizar
-   ↓
-Consultar novamente
-   ↓
-Excluir
-   ↓
-Confirmar exclusão
+Integração nova
+      ↓
+novos Tests
+      +
+Tests anteriores
+      ↓
+reexecução
 ```
 
-Ao longo desse fluxo, verificamos a interação entre:
+No nosso exemplo:
 
 ```text
-Postman
-   ↓
-HTTP
-   ↓
-Spring Boot
-   ↓
-persistência
-   ↓
-MySQL
+Incremento 1
+GET
+
+Incremento 2
+GET + POST
+
+Incremento 3
+GET + POST + GET ID
+
+Incremento 4
+GET + POST + GET ID + PUT + confirmação
+
+Incremento 5
+fluxo completo
 ```
 
-O objetivo não foi apenas verificar cada endpoint isoladamente.
-
-Também verificamos se operações diferentes conseguem trabalhar sobre os mesmos dados de forma consistente.
+A Collection facilita essa reexecução.
 
 ---
 
-# 23. Atividade prática
+# 36. Integração incremental + automação + regressão
 
-Utilizando o projeto `Menu-Back-End`, construa no Postman uma Collection que realize o seguinte fluxo:
-
-1. listar os produtos;
-2. cadastrar um novo produto;
-3. localizar e armazenar o identificador do produto criado;
-4. buscar o produto pelo identificador;
-5. alterar pelo menos dois campos;
-6. consultar novamente o produto;
-7. confirmar que as alterações foram persistidas;
-8. excluir o produto;
-9. confirmar que ele não aparece mais na listagem.
-
-Cada etapa deverá possuir pelo menos uma verificação automatizada.
-
-## Organização esperada
+Os três conceitos se relacionam:
 
 ```text
-Menu Back-End - Testes de Integração
-│
-└── 01 - Fluxo CRUD
-    ├── GET - Listar produtos
-    ├── POST - Criar produto
-    ├── GET - Localizar produto
-    ├── GET - Buscar produto por ID
-    ├── PUT - Atualizar produto
-    ├── GET - Confirmar atualização
-    ├── DELETE - Excluir produto
-    └── GET - Confirmar exclusão
+INTEGRAÇÃO INCREMENTAL
+        ↓
+novos componentes/comportamentos
+        ↓
+AUTOMAÇÃO
+        ↓
+executar a suíte novamente
+        ↓
+REGRESSÃO
+        ↓
+verificar se algo anteriormente correto deixou de funcionar
 ```
 
----
-
-# 24. Questões para discussão
-
-1. Por que esse conjunto pode ser considerado um teste de integração?
-2. Se o `GET /produtos` falhar, o defeito obrigatoriamente está no Controller?
-3. Por que utilizamos uma nova consulta depois do `PUT`?
-4. Qual a vantagem de armazenar o ID do produto em uma variável?
-5. Qual a diferença entre executar uma requisição e criar um teste para essa requisição?
-6. O que significa realizar a integração de forma incremental?
-7. Por que os testes anteriores devem ser executados novamente quando um novo incremento é adicionado?
-8. Se todos os testes passarem, podemos garantir que a integração não possui nenhum defeito?
+Essa é uma das principais razões para automatizar testes de integração.
 
 ---
 
-# 25. Checklist
+# 37. Atividade prática
 
-Antes de finalizar, verifique:
+Utilizando o projeto `Menu-Back-End`, construa no Postman uma Collection que:
+
+1. liste os produtos;
+2. cadastre um novo produto;
+3. armazene o identificador do produto;
+4. consulte o produto pelo identificador;
+5. altere pelo menos dois campos;
+6. confirme a persistência da alteração;
+7. exclua o produto;
+8. confirme a exclusão.
+
+Cada Request deverá possuir ao menos um Test quando aplicável.
+
+---
+
+# 38. Execução automatizada
+
+Depois de concluir a Collection:
+
+1. abra o Collection Runner;
+2. selecione o Environment `Menu - Local`;
+3. confira a ordem das Requests;
+4. execute toda a Collection;
+5. observe os Tests aprovados e reprovados;
+6. corrija eventuais problemas;
+7. execute novamente.
+
+Registre o resultado final da execução.
+
+---
+
+# 39. Questões para discussão
+
+1. Qual a diferença entre uma Request e um Test no Postman?
+2. Para que serve um Pre-request script?
+3. Para que serve um Post-response script?
+4. Onde a variável `produtoId` é armazenada?
+5. Por que o `produtoId` é importante para o fluxo da Collection?
+6. Qual a função de `pm.test()`?
+7. Qual a função de `pm.expect()`?
+8. Por que confirmamos a atualização utilizando um novo GET?
+9. O que o Collection Runner automatiza?
+10. Qual a diferença entre executar Requests individualmente e executar a Collection?
+11. O que significa integração incremental?
+12. Por que reexecutar testes anteriores?
+13. O que é uma regressão?
+14. Se todos os Tests passarem, podemos afirmar que o sistema não possui defeitos?
+
+---
+
+# 40. Checklist
+
+Antes de finalizar:
 
 - [ ] A aplicação Spring Boot está executando.
 - [ ] O MySQL está configurado.
 - [ ] A Collection foi criada.
 - [ ] O Environment `Menu - Local` está selecionado.
-- [ ] A variável `baseUrl` está configurada.
-- [ ] O teste de listagem foi executado.
-- [ ] Um produto de teste foi criado.
-- [ ] O ID do produto foi armazenado.
-- [ ] O produto foi consultado pelo ID.
-- [ ] O produto foi atualizado.
-- [ ] A atualização foi confirmada com uma nova consulta.
-- [ ] O produto foi excluído.
+- [ ] `baseUrl` está configurada.
+- [ ] O primeiro GET funciona.
+- [ ] Existem Tests no Post-response.
+- [ ] O POST envia Body em JSON.
+- [ ] O Pre-request cria `nomeProdutoTeste`.
+- [ ] O Post-response salva `produtoId`.
+- [ ] O GET por ID utiliza `{{produtoId}}`.
+- [ ] O PUT foi executado.
+- [ ] A alteração foi confirmada por GET.
+- [ ] O DELETE foi executado.
 - [ ] A exclusão foi confirmada.
-- [ ] As requisições possuem verificações automatizadas.
-- [ ] Os testes anteriores foram reexecutados ao adicionar novos passos.
+- [ ] A Collection foi executada no Runner.
+- [ ] Todos os Tests foram analisados.
+- [ ] Os testes anteriores foram reexecutados após novos incrementos.
 
 ---
 
 # Próxima prática
 
-Na próxima aula prática, utilizaremos a mesma API e o Postman para aplicar técnicas de seleção de casos de teste:
+Na próxima aula prática, utilizaremos a mesma API e o Postman para aplicar técnicas de seleção de casos:
 
 ```text
 Particionamento de Equivalência
@@ -1052,15 +1701,15 @@ Tabela de Decisão
 Pairwise
 ```
 
-O objetivo será responder outra pergunta:
+A pergunta central será:
 
-> **Quais dados devemos escolher para testar uma API de forma sistemática?**
+> **Quais dados devemos selecionar para testar uma API de forma sistemática?**
 
 ---
 
 # Referências
 
-## Projeto utilizado
+## Projeto
 
 **Menu-Back-End**
 
@@ -1068,23 +1717,37 @@ O objetivo será responder outra pergunta:
 https://github.com/Herysson/Menu-Back-End
 ```
 
-## Postman
+## Documentação oficial do Postman
 
-Documentação oficial:
+### Collections
 
 ```text
-https://learning.postman.com/
+https://learning.postman.com/docs/collections/collections-overview/
 ```
 
-Recursos utilizados nesta prática:
+### Environments e Variables
 
-- Collections;
-- Environments;
-- Variables;
-- Pre-request Scripts;
-- Post-response Scripts;
-- `pm.test`;
-- `pm.expect`.
+```text
+https://learning.postman.com/docs/sending-requests/variables/managing-environments/
+```
+
+### Scripts
+
+```text
+https://learning.postman.com/docs/tests-and-scripts/write-scripts/intro-to-scripts/
+```
+
+### Test scripts
+
+```text
+https://learning.postman.com/docs/tests-and-scripts/write-scripts/test-scripts/
+```
+
+### Collection Runner
+
+```text
+https://learning.postman.com/docs/collections/running-collections/intro-to-collection-runs/
+```
 
 ## Bibliografia da disciplina
 
