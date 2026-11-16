@@ -294,37 +294,111 @@ https://www.selenium.dev/documentation/selenium_manager/
 
 Crie um projeto Maven.
 
-Sugestão:
+Nesta aula utilizaremos o nome:
 
 ```text
-teste-validacao-selenium
+SeleniumTeste
 ```
 
-Estrutura esperada:
+A estrutura do projeto deverá ficar semelhante a:
 
 ```text
-teste-validacao-selenium
+SeleniumTeste
 │
-├── pom.xml
+├── .idea/
 │
-└── src
-    └── test
-        └── java
-            └── br
-                └── edu
-                    └── ufn
-                        └── validacao
-                            └── SauceDemoTest.java
+├── src/
+│   ├── main/
+│   │
+│   └── test/
+│       └── java/
+│           └── SauceDemoTest.java
+│
+├── target/
+├── .gitignore
+└── pom.xml
 ```
+
+No IntelliJ IDEA, a visualização será semelhante a:
+
+```text
+SeleniumTeste
+├── .idea
+├── src
+│   ├── main
+│   └── test
+│       └── java
+│           └── SauceDemoTest
+├── target
+├── .gitignore
+└── pom.xml
+```
+
+Para esta prática, **não criaremos pacotes adicionais**.
+
+Portanto, o arquivo:
+
+```text
+SauceDemoTest.java
+```
+
+ficará diretamente em:
+
+```text
+src/test/java/
+```
+
+e os exemplos desta aula **não utilizarão uma declaração `package`** no início da classe.
+
+> Em projetos maiores, é recomendável organizar as classes em pacotes. Nesta primeira prática, manteremos a estrutura simples para concentrar a atenção em JUnit e Selenium.
 
 ---
 
 # 10. Configurando o `pom.xml`
 
-Utilize:
+No bloco `<dependencies>`, utilize as duas dependências abaixo:
 
 ```xml
 <dependencies>
+
+    <dependency>
+        <groupId>org.seleniumhq.selenium</groupId>
+        <artifactId>selenium-java</artifactId>
+        <version>4.52.0</version>
+        <scope>compile</scope>
+    </dependency>
+
+    <dependency>
+        <groupId>org.junit.jupiter</groupId>
+        <artifactId>junit-jupiter-api</artifactId>
+        <version>6.1.3</version>
+        <scope>test</scope>
+    </dependency>
+
+</dependencies>
+```
+
+Um `pom.xml` mínimo pode ficar assim:
+
+```xml
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
+         https://maven.apache.org/xsd/maven-4.0.0.xsd">
+
+    <modelVersion>4.0.0</modelVersion>
+
+    <groupId>br.edu.ufn</groupId>
+    <artifactId>SeleniumTeste</artifactId>
+    <version>1.0-SNAPSHOT</version>
+
+    <properties>
+        <maven.compiler.source>17</maven.compiler.source>
+        <maven.compiler.target>17</maven.compiler.target>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    </properties>
+
+    <dependencies>
 
         <dependency>
             <groupId>org.seleniumhq.selenium</groupId>
@@ -340,14 +414,18 @@ Utilize:
             <scope>test</scope>
         </dependency>
 
-</dependencies>
+    </dependencies>
+
+</project>
 ```
 
-Atualize as dependências Maven na IDE.
+Depois de salvar o arquivo, atualize/recarregue as dependências Maven na IDE.
 
 ---
 
 # 11. Primeiro contato com o WebDriver
+
+Como `SauceDemoTest.java` está diretamente em `src/test/java`, **não coloque uma linha `package ...;` no início do arquivo**.
 
 Crie:
 
@@ -355,7 +433,7 @@ Crie:
 SauceDemoTest.java
 ```
 
-Conteúdo inicial:
+Neste primeiro exemplo utilizaremos `Thread.sleep()` **apenas para fins didáticos**, para que seja possível observar o navegador sendo aberto antes de ele ser encerrado.
 
 ```java
 import org.junit.jupiter.api.Test;
@@ -369,9 +447,11 @@ class SauceDemoTest {
 
         WebDriver driver = new ChromeDriver();
 
+        driver.manage().window().maximize();
+
         driver.get("https://www.saucedemo.com/");
 
-        // Aguarda 5 segundos para visualizar a página aberta
+        // Pausa didática: mantém a página aberta por 5 segundos
         Thread.sleep(5000);
 
         driver.quit();
@@ -392,8 +472,12 @@ Chrome é iniciado
  ↓
 SauceDemo é aberto
  ↓
+aguarda 5 segundos
+ ↓
 Chrome é encerrado
 ```
+
+> **Importante:** `Thread.sleep()` está sendo usado aqui apenas para tornar a demonstração visível em sala. Mais adiante substituiremos pausas desse tipo por esperas explícitas com `WebDriverWait`.
 
 ---
 
@@ -450,8 +534,6 @@ e:
 Atualize a classe:
 
 ```java
-package br.edu.ufn.validacao;
-
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -476,8 +558,12 @@ class SauceDemoTest {
     }
 
     @Test
-    void abrirPagina() {
+    void abrirPagina() throws InterruptedException {
+
         driver.get("https://www.saucedemo.com/");
+
+        // Pausa apenas para observação em sala
+        Thread.sleep(5000);
     }
 }
 ```
@@ -654,92 +740,79 @@ Login com credenciais válidas
 Adicione os imports:
 
 ```java
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Test;
-
 import org.openqa.selenium.By;
-import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
-import org.openqa.selenium.chrome.ChromeDriver;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+```
 
-class SauceDemoTest {
+E o teste:
 
-    private WebDriver driver;
+```java
+@Test
+@DisplayName("RF01 - Login válido deve apresentar o catálogo")
+void loginValidoDeveApresentarCatalogo()
+        throws InterruptedException {
 
-    @BeforeEach
-    void iniciar() {
-        driver = new ChromeDriver();
-        driver.manage().window().maximize();
-    }
+    driver.get("https://www.saucedemo.com/");
 
-    @AfterEach
-    void finalizar() {
-        if (driver != null) {
-            driver.quit();
-        }
-    }
+    // Permite visualizar a página antes da interação
+    Thread.sleep(2000);
 
-    @Test
-    void abrirPagina() throws InterruptedException {
+    WebElement usuario =
+            driver.findElement(By.id("user-name"));
 
-        driver.get("https://www.saucedemo.com/");
+    WebElement senha =
+            driver.findElement(By.id("password"));
 
-        // Aguarda 5 segundos para visualizar a página
-        Thread.sleep(5000);
-    }
+    WebElement login =
+            driver.findElement(By.id("login-button"));
 
-    @Test
-    @DisplayName("RF01 - Login válido deve apresentar o catálogo")
-    void loginValidoDeveApresentarCatalogo() throws InterruptedException {
+    usuario.sendKeys("standard_user");
 
-        // Abre a página
-        driver.get("https://www.saucedemo.com/");
+    // Permite visualizar o preenchimento do usuário
+    Thread.sleep(1500);
 
-        Thread.sleep(2000);
+    senha.sendKeys("secret_sauce");
 
-        // Localiza os elementos
-        WebElement usuario =
-                driver.findElement(By.id("user-name"));
+    // Permite visualizar o preenchimento da senha
+    Thread.sleep(1500);
 
-        WebElement senha =
-                driver.findElement(By.id("password"));
+    login.click();
 
-        WebElement login =
-                driver.findElement(By.id("login-button"));
+    // Permite visualizar a página do catálogo
+    Thread.sleep(3000);
 
-        // Digita o usuário
-        usuario.sendKeys("standard_user");
+    assertTrue(
+        driver.getCurrentUrl().contains("inventory.html")
+    );
 
-        Thread.sleep(1500);
-
-        // Digita a senha
-        senha.sendKeys("secret_sauce");
-
-        Thread.sleep(1500);
-
-        // Clica no botão Login
-        login.click();
-
-        // Aguarda para que os alunos vejam o catálogo
-        Thread.sleep(3000);
-
-        // Verifica se o usuário foi direcionado
-        // para a página de produtos
-        assertTrue(
-                driver.getCurrentUrl().contains("inventory.html")
-        );
-
-        // Mantém a página aberta mais um pouco
-        Thread.sleep(3000);
-    }
+    // Mantém o resultado visível antes do @AfterEach fechar o navegador
+    Thread.sleep(3000);
 }
 ```
 
 Execute o teste.
+
+Neste momento, as pausas existem para que seja possível acompanhar visualmente:
+
+```text
+abrir página
+    ↓ 2 s
+digitar usuário
+    ↓ 1,5 s
+digitar senha
+    ↓ 1,5 s
+clicar em Login
+    ↓ 3 s
+ver catálogo
+    ↓
+executar a assertiva
+```
+
+> Continuamos usando `Thread.sleep()` somente como recurso de demonstração. Ele não será nossa estratégia de sincronização dos testes.
 
 ---
 
@@ -866,36 +939,61 @@ elemento ainda não apareceu
 teste falha
 ```
 
-Esse tipo de problema pode gerar testes instáveis.
+Até aqui utilizamos:
+
+```java
+Thread.sleep(...)
+```
+
+para que **nós, em sala, conseguíssemos enxergar as ações acontecendo**.
+
+Mas uma suíte real não deve depender de tempos fixos escolhidos apenas para observação.
 
 ---
 
-# 22. Evite `Thread.sleep()`
+# 22. `Thread.sleep()` não é sincronização inteligente
 
-Uma solução aparentemente simples seria:
+Considere:
 
 ```java
 Thread.sleep(5000);
 ```
 
-Mas isso significa:
+Esse comando significa:
 
-> espere sempre 5 segundos.
+> **Pare obrigatoriamente por 5 segundos.**
 
-Problemas:
+Mesmo que a página esteja pronta em 200 ms, o teste continuará parado pelos 5 segundos completos.
 
-- talvez 5 segundos não sejam suficientes;
-- talvez a página fique pronta em 200 ms;
-- a suíte fica desnecessariamente lenta;
-- o teste pode continuar instável.
+Também existe o problema inverso:
 
-O Selenium recomenda estratégias de espera adequadas em vez de pausas fixas.
+```text
+sleep = 5 segundos
+↓
+servidor demorou 6 segundos
+↓
+o teste continua cedo demais
+↓
+pode falhar
+```
+
+Portanto, os `sleep()` dos primeiros exemplos têm uma finalidade estritamente didática.
+
+```text
+Thread.sleep()
+↓
+bom para VER a demonstração
+
+WebDriverWait
+↓
+bom para SINCRONIZAR o teste
+```
 
 ---
 
 # 23. Esperas explícitas
 
-Vamos utilizar:
+Para sincronizar corretamente o teste utilizaremos:
 
 ```java
 WebDriverWait
@@ -934,11 +1032,46 @@ void iniciar() {
 }
 ```
 
+Observe com atenção:
+
+```java
+Duration.ofSeconds(10)
+```
+
+**não significa que o Selenium ficará parado durante 10 segundos.**
+
+Significa:
+
+> O Selenium poderá aguardar **até 10 segundos** pela condição solicitada.
+
+Se a condição ficar verdadeira antes disso, o teste continua imediatamente.
+
 ---
 
-# 24. Esperando uma condição
+# 24. Esperando uma condição, não um tempo fixo
 
-Depois do login:
+Depois de clicar em Login, podemos aguardar a navegação:
+
+```java
+wait.until(
+    ExpectedConditions.urlContains("inventory.html")
+);
+```
+
+Esse código significa:
+
+```text
+clicou em Login
+      ↓
+a URL já contém inventory.html?
+      ├── SIM → continue agora
+      └── NÃO → tente novamente
+                   ↓
+              até no máximo
+                10 segundos
+```
+
+Depois podemos aguardar o título do catálogo:
 
 ```java
 WebElement titulo = wait.until(
@@ -948,57 +1081,108 @@ WebElement titulo = wait.until(
 );
 ```
 
-Significa:
+Agora a condição é:
 
-```text
-aguarde
-↓
-até que
-↓
-.title
-↓
-esteja visível
-```
+> Aguarde **até que o elemento `.title` esteja visível**.
 
-Se isso acontecer antes de 10 segundos, o teste continua imediatamente.
+Em uma aplicação rápida como o SauceDemo, essas condições normalmente são satisfeitas quase imediatamente.
 
-Se não acontecer dentro do limite, ocorre timeout.
+Por isso, **não espere enxergar uma pausa de 10 segundos na tela**.
+
+O objetivo do `WebDriverWait` não é criar um timer visual. O objetivo é impedir que o Selenium avance antes de a aplicação estar pronta.
 
 ---
 
-# 25. CT01 com espera explícita
+# 25. CT01 usando espera explícita
 
-Atualize:
+Agora vamos substituir as pausas usadas para sincronização pelo `WebDriverWait`.
+
+Para a demonstração em sala, manteremos apenas pequenas pausas nas ações iniciais, para que os alunos consigam acompanhar o preenchimento dos campos. Depois do clique em Login, a sincronização será feita corretamente com condições explícitas.
 
 ```java
 @Test
 @DisplayName("RF01 - Login válido deve apresentar o catálogo")
-void loginValidoDeveApresentarCatalogo() {
+void loginValidoDeveApresentarCatalogo()
+        throws InterruptedException {
 
     driver.get("https://www.saucedemo.com/");
+
+    // Apenas para visualização em sala
+    Thread.sleep(1500);
 
     driver.findElement(By.id("user-name"))
           .sendKeys("standard_user");
 
+    // Apenas para visualização em sala
+    Thread.sleep(1000);
+
     driver.findElement(By.id("password"))
           .sendKeys("secret_sauce");
+
+    // Apenas para visualização em sala
+    Thread.sleep(1000);
 
     driver.findElement(By.id("login-button"))
           .click();
 
+    // SINCRONIZAÇÃO REAL:
+    // aguarda ATÉ 10 segundos pela mudança da URL
+    wait.until(
+        ExpectedConditions.urlContains("inventory.html")
+    );
+
+    // SINCRONIZAÇÃO REAL:
+    // aguarda ATÉ 10 segundos pelo título ficar visível
     WebElement titulo = wait.until(
         ExpectedConditions.visibilityOfElementLocated(
             By.cssSelector(".title")
         )
     );
 
-    assertEquals("Products", titulo.getText());
+    assertEquals(
+        "Products",
+        titulo.getText()
+    );
 
     assertTrue(
-        driver.getCurrentUrl().contains("inventory.html")
+        driver.getCurrentUrl()
+              .contains("inventory.html")
     );
+
+    // Apenas para manter o resultado visível em sala
+    Thread.sleep(3000);
 }
 ```
+
+A diferença agora fica clara:
+
+```text
+Thread.sleep(1000)
+        ↓
+pausa obrigatória de 1 segundo
+        ↓
+finalidade: demonstração visual
+```
+
+versus:
+
+```text
+wait.until(...)
+        ↓
+aguarda somente enquanto necessário
+        ↓
+limite máximo de 10 segundos
+        ↓
+finalidade: sincronização
+```
+
+Assim, o valor:
+
+```java
+Duration.ofSeconds(10)
+```
+
+é um **timeout máximo**, e não uma pausa fixa.
 
 ## Documentação
 
@@ -1006,7 +1190,7 @@ void loginValidoDeveApresentarCatalogo() {
 https://www.selenium.dev/documentation/webdriver/waits/
 ```
 
-> Evite misturar esperas implícitas e explícitas no mesmo teste.
+> **Importante:** evite misturar esperas implícitas (`implicitlyWait`) e explícitas (`WebDriverWait`) no mesmo teste, pois isso pode produzir tempos de espera imprevisíveis.
 
 ---
 
@@ -1202,9 +1386,9 @@ Essa é uma pergunta típica de validação.
 
 # 31. Classe completa até aqui
 
-```java
-package br.edu.ufn.validacao;
+A classe consolidada abaixo já utiliza `WebDriverWait` como mecanismo de sincronização. Os `Thread.sleep()` usados anteriormente podem ser mantidos temporariamente durante a demonstração em sala, mas devem ser removidos da versão final da suíte automatizada.
 
+```java
 import java.time.Duration;
 
 import org.junit.jupiter.api.AfterEach;
@@ -1488,8 +1672,8 @@ Exemplo:
 ```text
 target/
 └── surefire-reports/
-    ├── TEST-br.edu.ufn.validacao.SauceDemoTest.xml
-    └── br.edu.ufn.validacao.SauceDemoTest.txt
+    ├── TEST-SauceDemoTest.xml
+    └── SauceDemoTest.txt
 ```
 
 Esses arquivos podem ser utilizados como evidência da execução automatizada.
@@ -1854,6 +2038,9 @@ Justifique.
 
 Antes de finalizar:
 
+- [ ] O projeto Maven foi criado com a estrutura `src/main` e `src/test/java`.
+- [ ] `SauceDemoTest.java` está diretamente em `src/test/java`.
+- [ ] A classe não possui declaração `package`.
 - [ ] Java está instalado.
 - [ ] Maven está configurado.
 - [ ] Selenium foi adicionado ao `pom.xml`.
