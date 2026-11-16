@@ -324,54 +324,23 @@ teste-validacao-selenium
 Utilize:
 
 ```xml
-<project xmlns="http://maven.apache.org/POM/4.0.0"
-         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
-         https://maven.apache.org/xsd/maven-4.0.0.xsd">
-
-    <modelVersion>4.0.0</modelVersion>
-
-    <groupId>br.edu.ufn</groupId>
-    <artifactId>teste-validacao-selenium</artifactId>
-    <version>1.0-SNAPSHOT</version>
-
-    <properties>
-        <maven.compiler.source>17</maven.compiler.source>
-        <maven.compiler.target>17</maven.compiler.target>
-        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-
-        <selenium.version>4.52.0</selenium.version>
-        <junit.version>6.1.3</junit.version>
-    </properties>
-
-    <dependencies>
+<dependencies>
 
         <dependency>
             <groupId>org.seleniumhq.selenium</groupId>
             <artifactId>selenium-java</artifactId>
-            <version>${selenium.version}</version>
+            <version>4.52.0</version>
+            <scope>compile</scope>
         </dependency>
 
         <dependency>
             <groupId>org.junit.jupiter</groupId>
-            <artifactId>junit-jupiter</artifactId>
-            <version>${junit.version}</version>
+            <artifactId>junit-jupiter-api</artifactId>
+            <version>6.1.3</version>
             <scope>test</scope>
         </dependency>
 
-    </dependencies>
-
-    <build>
-        <plugins>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-surefire-plugin</artifactId>
-                <version>3.6.1</version>
-            </plugin>
-        </plugins>
-    </build>
-
-</project>
+</dependencies>
 ```
 
 Atualize as dependências Maven na IDE.
@@ -389,8 +358,6 @@ SauceDemoTest.java
 Conteúdo inicial:
 
 ```java
-package br.edu.ufn.validacao;
-
 import org.junit.jupiter.api.Test;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.chrome.ChromeDriver;
@@ -398,11 +365,14 @@ import org.openqa.selenium.chrome.ChromeDriver;
 class SauceDemoTest {
 
     @Test
-    void abrirPagina() {
+    void abrirPagina() throws InterruptedException {
 
         WebDriver driver = new ChromeDriver();
 
         driver.get("https://www.saucedemo.com/");
+
+        // Aguarda 5 segundos para visualizar a página aberta
+        Thread.sleep(5000);
 
         driver.quit();
     }
@@ -684,40 +654,88 @@ Login com credenciais válidas
 Adicione os imports:
 
 ```java
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
 import org.openqa.selenium.By;
+import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
+import org.openqa.selenium.chrome.ChromeDriver;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-```
 
-E o teste:
+class SauceDemoTest {
 
-```java
-@Test
-@DisplayName("RF01 - Login válido deve apresentar o catálogo")
-void loginValidoDeveApresentarCatalogo() {
+    private WebDriver driver;
 
-    driver.get("https://www.saucedemo.com/");
+    @BeforeEach
+    void iniciar() {
+        driver = new ChromeDriver();
+        driver.manage().window().maximize();
+    }
 
-    WebElement usuario =
-            driver.findElement(By.id("user-name"));
+    @AfterEach
+    void finalizar() {
+        if (driver != null) {
+            driver.quit();
+        }
+    }
 
-    WebElement senha =
-            driver.findElement(By.id("password"));
+    @Test
+    void abrirPagina() throws InterruptedException {
 
-    WebElement login =
-            driver.findElement(By.id("login-button"));
+        driver.get("https://www.saucedemo.com/");
 
-    usuario.sendKeys("standard_user");
-    senha.sendKeys("secret_sauce");
+        // Aguarda 5 segundos para visualizar a página
+        Thread.sleep(5000);
+    }
 
-    login.click();
+    @Test
+    @DisplayName("RF01 - Login válido deve apresentar o catálogo")
+    void loginValidoDeveApresentarCatalogo() throws InterruptedException {
 
-    assertTrue(
-        driver.getCurrentUrl().contains("inventory.html")
-    );
+        // Abre a página
+        driver.get("https://www.saucedemo.com/");
+
+        Thread.sleep(2000);
+
+        // Localiza os elementos
+        WebElement usuario =
+                driver.findElement(By.id("user-name"));
+
+        WebElement senha =
+                driver.findElement(By.id("password"));
+
+        WebElement login =
+                driver.findElement(By.id("login-button"));
+
+        // Digita o usuário
+        usuario.sendKeys("standard_user");
+
+        Thread.sleep(1500);
+
+        // Digita a senha
+        senha.sendKeys("secret_sauce");
+
+        Thread.sleep(1500);
+
+        // Clica no botão Login
+        login.click();
+
+        // Aguarda para que os alunos vejam o catálogo
+        Thread.sleep(3000);
+
+        // Verifica se o usuário foi direcionado
+        // para a página de produtos
+        assertTrue(
+                driver.getCurrentUrl().contains("inventory.html")
+        );
+
+        // Mantém a página aberta mais um pouco
+        Thread.sleep(3000);
+    }
 }
 ```
 
